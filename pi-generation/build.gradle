@@ -1,5 +1,10 @@
 plugins {
     id 'info.ankin.pi-search.conventions'
+    id 'application'
+}
+
+application {
+    mainClass.set 'info.ankin.pisearch.generation.Generate'
 }
 
 dependencies {
