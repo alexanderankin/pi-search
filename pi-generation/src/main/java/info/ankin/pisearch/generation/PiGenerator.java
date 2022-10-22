@@ -8,16 +8,18 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * @see <a href="https://stackoverflow.com/a/46166848">original answer on SO</a>
  */
 public class PiGenerator {
+    /**
+     * This can/should be obscenely large as it will (should) be made up of idle threads
+     */
+    private static final ForkJoinPool FJP = new ForkJoinPool(500);
     /**
      * @see <a href="https://stackoverflow.com/a/3334187">IEEE reference from SO</a>
      */
@@ -51,6 +53,10 @@ public class PiGenerator {
         this.mathContext = mathContext;
     }
 
+    private static <T> CompletableFuture<T> toFjpCf(Future<T> future) {
+        return CompletableFuture.supplyAsync(ThrowingCallable.supplier(future::get), FJP);
+    }
+
     public boolean isUseCache() {
         return useCache;
     }
@@ -61,17 +67,13 @@ public class PiGenerator {
     }
 
     public BigDecimal calculate(int k) {
-        BigDecimal result = BigDecimal.ZERO;
-        AtomicReference<BigDecimal> atomicReference = new AtomicReference<>(result);
+        AtomicReference<BigDecimal> atomicReference = new AtomicReference<>(BigDecimal.ZERO);
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         CountDownLatch countDownLatch = new CountDownLatch(k);
         for (int i = 0; i <= k; i++) {
-            final int thisRound = i;
-            executorService.execute(() -> {
-                BigDecimal bigDecimal = doCalc(thisRound);
-                atomicReference.updateAndGet(bigDecimal::add);
-                countDownLatch.countDown();
-            });
+            doCalc(i, executorService)
+                    .thenAcceptAsync(b -> atomicReference.updateAndGet(b::add))
+                    .thenRunAsync(countDownLatch::countDown);
         }
 
         await(countDownLatch);
@@ -88,25 +90,35 @@ public class PiGenerator {
         }
     }
 
-    BigDecimal doCalc(int k) {
+    CompletableFuture<BigDecimal> doCalc(int k, ExecutorService executorService) {
         BigInteger kBigInt = BigInteger.valueOf(k);
-        BigInteger numerator = (k % 2 == 0 ? BigInteger.ONE : NEGATIVE_ONE)
+        CompletableFuture<BigInteger> numerator = toFjpCf(executorService.submit(() -> (k % 2 == 0 ? BigInteger.ONE : NEGATIVE_ONE)
                 .multiply(factorial(kBigInt.multiply(SIX)))
-                .multiply(BigInteger.valueOf(545140134L * k + 13591409));
+                .multiply(BigInteger.valueOf(545140134L * k + 13591409))
+        ));
+
+        CompletableFuture<BigDecimal> m1 = toFjpCf(executorService.submit(() -> BigDecimalMath.pow(new BigDecimal(factorial(kBigInt)),
+                new BigDecimal(BigInteger.valueOf(3)),
+                mathContext)));
+
+        CompletableFuture<BigDecimal> m2 = toFjpCf(executorService.submit(() -> BigDecimalMath.pow(new BigDecimal(BigInteger.valueOf(640320)),
+                new BigDecimal(3 * k + 3.0 / 2.0),
+                mathContext)));
+
+        return CompletableFuture.allOf(numerator, m1, m2)
+                .toCompletableFuture()
+                .thenApplyAsync(v -> {
         BigDecimal d =
                 new BigDecimal(
                         factorial(BigInteger.valueOf(3).multiply(kBigInt))
                 )
-                        .multiply(BigDecimalMath.pow(new BigDecimal(factorial(kBigInt)),
-                                new BigDecimal(BigInteger.valueOf(3)),
-                                mathContext))
-                        .multiply(BigDecimalMath.pow(new BigDecimal(BigInteger.valueOf(640320)),
-                                new BigDecimal(3 * k + 3.0 / 2.0),
-                                mathContext), mathContext);
+                        .multiply(m1.join())
+                        .multiply(m2.join(), mathContext);
 
         return
-                new BigDecimal(numerator)
+                new BigDecimal(numerator.join())
                         .divide(d, mathContext);
+                }, executorService);
     }
 
     /**
@@ -137,4 +149,19 @@ public class PiGenerator {
         }
     }
 
+    interface ThrowingCallable<T> {
+        static <T> Supplier<T> supplier(ThrowingCallable<T> tc) {
+            return tc::callUnsafe;
+        }
+
+        T call() throws Throwable;
+
+        default T callUnsafe() {
+            try {
+                return call();
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }
