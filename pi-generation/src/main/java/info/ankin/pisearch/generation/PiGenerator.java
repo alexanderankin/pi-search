@@ -79,26 +79,9 @@ public class PiGenerator {
                                 new BigDecimal(3 * k + 3.0 / 2.0),
                                 mathContext), mathContext);
 
-        //noinspection ConstantConditions
-        if (2 < 1) {
-            double denominator = factorial(3 * k).longValue() * Math.pow(factorial(k).longValue(), 3) * Math.pow(640320, 3 * k + 3.0 / 2.0);
-            if (d.doubleValue() != denominator) {
-                String plainDiff = new BigDecimal(d.doubleValue() - denominator).toPlainString();
-                String mantissa = mant(d.doubleValue()) + " vs " + mant(denominator);
-
-                String mantissaDiff = BigDecimal.valueOf(mant(d.doubleValue()) - mant(denominator)).toPlainString();
-                System.out.println("nope: " + mantissaDiff + ", or: " + mantissa + "(" + plainDiff.substring(0, Math.min(100, plainDiff.length() - 1)) + ")");
-            }
-        }
-
         return
                 new BigDecimal(numerator)
-                        // .divide(BigDecimal.valueOf(denominator), new MathContext(BigDecimal.valueOf(denominator).precision(), RoundingMode.HALF_UP)).doubleValue();
                         .divide(d, new MathContext(d.precision(), RoundingMode.HALF_UP));
-    }
-
-    private double mant(double denominator) {
-        return denominator / Math.pow(2, Math.getExponent(denominator));
     }
 
     /**
