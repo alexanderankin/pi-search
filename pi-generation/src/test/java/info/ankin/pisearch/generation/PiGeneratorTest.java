@@ -11,7 +11,7 @@ class PiGeneratorTest {
         Object result = new PiGenerator().calculate(10);
         System.out.println(result);
 
-        assertEquals(String.valueOf(result), "3.1415926535897936");
+        assertEquals("3.1415926535897936", String.valueOf(result));
     }
 
 }

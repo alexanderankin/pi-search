@@ -18,12 +18,12 @@ public class PiGenerator {
     }
 
     double doCalc(int k) {
-        double numerator = Math.pow(-1, k) * factorial(6 * k) * (545140134 * k + 13591409);
+        double numerator = (k % 2 == 0 ? 1 : -1) * (double) factorial(6 * k) * (545140134 * k + 13591409);
         double denominator = factorial(3 * k) * Math.pow(factorial(k), 3) * Math.pow(640320, 3 * k + 3.0 / 2.0);
         return numerator / denominator;
     }
 
-    double factorial(int n) {
+    int factorial(int n) {
         return intFactorial(n);
     }
 
