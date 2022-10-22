@@ -1,0 +1,13 @@
+plugins {
+    id 'java'
+}
+
+repositories.mavenCentral()
+
+// tests
+tasks.withType(Test) { useJUnitPlatform() }
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}

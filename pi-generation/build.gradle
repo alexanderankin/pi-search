@@ -1,5 +1,3 @@
 plugins {
-    id 'java'
+    id 'info.ankin.pi-search.conventions'
 }
-
-repositories.mavenCentral()
