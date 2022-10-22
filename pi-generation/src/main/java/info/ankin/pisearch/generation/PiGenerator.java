@@ -9,6 +9,10 @@ import java.math.RoundingMode;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @see <a href="https://stackoverflow.com/a/46166848">original answer on SO</a>
@@ -58,10 +62,30 @@ public class PiGenerator {
 
     public BigDecimal calculate(int k) {
         BigDecimal result = BigDecimal.ZERO;
+        AtomicReference<BigDecimal> atomicReference = new AtomicReference<>(result);
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        CountDownLatch countDownLatch = new CountDownLatch(k);
         for (int i = 0; i <= k; i++) {
-            result = result.add(doCalc(i));
+            final int thisRound = i;
+            executorService.execute(() -> {
+                BigDecimal bigDecimal = doCalc(thisRound);
+                atomicReference.updateAndGet(bigDecimal::add);
+                countDownLatch.countDown();
+            });
         }
-        return BigDecimal.ONE.divide(result.multiply(BigDecimal.valueOf(12)), mathContext);
+
+        await(countDownLatch);
+        executorService.shutdown();
+        return BigDecimal.ONE.divide(atomicReference.get().multiply(BigDecimal.valueOf(12)), mathContext);
+    }
+
+    // basically, @lombok.SneakyThrows
+    private void await(CountDownLatch countDownLatch) {
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     BigDecimal doCalc(int k) {
