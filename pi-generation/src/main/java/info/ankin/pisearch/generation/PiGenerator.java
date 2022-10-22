@@ -81,7 +81,7 @@ public class PiGenerator {
 
         return
                 new BigDecimal(numerator)
-                        .divide(d, new MathContext(d.precision(), RoundingMode.HALF_UP));
+                        .divide(d, mathContext);
     }
 
     /**
