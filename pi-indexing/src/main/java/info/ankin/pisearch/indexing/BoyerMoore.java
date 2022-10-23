@@ -1,5 +1,6 @@
 package info.ankin.pisearch.indexing;
 
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -197,6 +198,7 @@ public class BoyerMoore {
     }
 
     //<editor-fold desc="Initial take of FS Algo">
+
     /**
      * java equivalent of page 7 of {@code 10.1007/3-540-44867-5_4}
      */
@@ -205,7 +207,7 @@ public class BoyerMoore {
         int m = pat.length();
         for (int i = m - 1; i >= 0; i--) {
             if (pat.charAt(i) != text.charAt(start + i)) {
-                if (i == m -1 ) {
+                if (i == m - 1) {
                     return hbcp(text.charAt(start + m - 1));
                 } else {
                     return gsp(i);
@@ -238,7 +240,7 @@ public class BoyerMoore {
         AtomicInteger s = new AtomicInteger();
 
         Runnable whileBadChars = () -> {
-            while (badChars.apply(tPrime.charAt(s.get() + m - 1))> 0) {
+            while (badChars.apply(tPrime.charAt(s.get() + m - 1)) > 0) {
                 s.set(s.get() + badChars.apply(tPrime.charAt(s.get() + m - 1)));
             }
         };
@@ -269,5 +271,74 @@ public class BoyerMoore {
     }
     //</editor-fold>
     //</editor-fold>
+
+    // tuned bm
+    Integer tunedBm(char[] x, int m, char[] y, int n) {
+        int j;
+        int k;
+        int shift;
+        int[] bmBc = new int[1000];
+
+        /* Preprocessing */
+        preBmBc(x, m, bmBc);
+        shift = bmBc[x[m - 1]];
+        bmBc[x[m - 1]] = 0;
+
+        // memset(y + n, x[m - 1], m);
+        // for (int memset = n; memset < (n + m); memset++) y[memset] = (char) m;
+
+        /* Searching */
+        j = 0;
+        while (j < n) {
+            k = bmBc[y[j + m - 1]];
+            while (k != 0) {
+                j += k;
+                k = bmBc[y[j + m - 1]];
+                j += k;
+                k = bmBc[y[j + m - 1]];
+                j += k;
+                k = bmBc[y[j + m - 1]];
+            }
+            if (memSame(x, subArray(y, j), m - 1) && j < n)
+                return j;
+            j += shift;                          /* shift */
+        }
+
+        return null;
+    }
+
+    private void preBmBc(char[] x, int m, int[] bmBc) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    // hide c implementation details like boolean types
+    private boolean memSame(char[] s1, char[] s2, int i) {
+        return memcmp(s1, s2, i) == 0;
+    }
+
+    private int memcmp(char[] s1, char[] s2, int i) {
+        for (int j = 0; j < i; j++) {
+            if (s1[i] != s2[i]) return 1;
+        }
+
+        return 0;
+    }
+
+    private char[] subArray(char[] array, int offset) {
+        return subArray(array, offset, -1);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private char[] subArray(char[] array, int offset, int length) {
+        if (offset >= array.length) {
+            throw new IllegalArgumentException(String.format("offset (%d) cannot be greater than array length: %d (%s)", offset, array.length, Arrays.toString(array)));
+        }
+        if (-1 == length) {
+            length = array.length - offset;
+        }
+        char[] result = new char[length];
+        System.arraycopy(array, offset, result, 0, result.length);
+        return result;
+    }
 
 }
