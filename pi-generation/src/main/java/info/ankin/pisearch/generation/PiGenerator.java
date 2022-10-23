@@ -68,12 +68,16 @@ public class PiGenerator {
 
     public BigDecimal calculate(int k) {
         AtomicReference<BigDecimal> atomicReference = new AtomicReference<>(BigDecimal.ZERO);
-        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
         CountDownLatch countDownLatch = new CountDownLatch(k);
         for (int i = 0; i <= k; i++) {
             doCalc(i, executorService)
-                    .thenAcceptAsync(b -> atomicReference.updateAndGet(b::add))
-                    .thenRunAsync(countDownLatch::countDown);
+                    .thenAccept(b -> {
+                        synchronized (atomicReference) {
+                            atomicReference.updateAndGet(b::add);
+                        }
+                    })
+                    .thenRun(countDownLatch::countDown);
         }
 
         await(countDownLatch);

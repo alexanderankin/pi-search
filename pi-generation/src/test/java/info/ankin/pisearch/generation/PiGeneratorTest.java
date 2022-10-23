@@ -2,11 +2,15 @@ package info.ankin.pisearch.generation;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PiGeneratorTest {
 
+    /**
+     * <code>
+     * for i in {1..100}; do ./gradlew :pi-generation:cleanTest :pi-generation:test --tests info.ankin.pisearch.generation.PiGeneratorTest.test_tenIterations -q && echo passed || break; done;
+     * </code>
+     */
     @Test
     void test_tenIterations() {
         Object result = new PiGenerator().calculate(10);
@@ -53,7 +57,8 @@ class PiGeneratorTest {
         logMemoryUsage();
 
         // we expect it to take us this many iterations
-        assertEquals(35, iteration);
+        assertTrue(iteration > 30 && iteration <= 40, "iteration was supposed to be almost 40, was: " + iteration);
+        System.out.println("took " + iteration + " iterations");
     }
 
     private void logMemoryUsage() {
