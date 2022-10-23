@@ -50,7 +50,7 @@ class PiGeneratorTest {
                 }
             }
 
-            if (iteration > 40) fail("taking too many iterations");
+            if (iteration > 50) fail("taking too many iterations");
         }
 
         // System.out.println("took " + iteration + " iterations to get to " + (digits.length() - 2) + " digits of pi");
