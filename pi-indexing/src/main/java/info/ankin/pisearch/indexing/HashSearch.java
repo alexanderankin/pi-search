@@ -22,7 +22,15 @@ public class HashSearch {
         int result = searcher.search(search);
         System.out.println(result);
 
-        System.out.println("match for " + search + " around: " + searcher.getText().substring(result - 10, result + 10));
+        String t = searcher.getText();
+        String around = t.substring(result - 10, result) +
+                " " +
+                search +
+                " " +
+                t.substring(result + search.length(),
+                        result + search.length() + 10);
+
+        System.out.println("match for " + search + " around: " + around);
     }
 
     @SuppressWarnings("unused")
