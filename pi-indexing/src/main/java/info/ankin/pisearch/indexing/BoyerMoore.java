@@ -285,7 +285,7 @@ public class BoyerMoore {
         bmBc[x[m - 1]] = 0;
 
         // memset(y + n, x[m - 1], m);
-        // for (int memset = n; memset < (n + m); memset++) y[memset] = (char) m;
+        for (int memset = n; memset < (n + m); memset++) y[memset] = (char) m;
 
         /* Searching */
         j = 0;
