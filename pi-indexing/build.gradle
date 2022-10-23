@@ -1,0 +1,6 @@
+plugins {
+    id 'info.ankin.pi-search.conventions'
+}
+
+dependencies {
+}
