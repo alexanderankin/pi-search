@@ -52,7 +52,7 @@ public class HashSearch {
 
         public abstract boolean isLengthIndexed(int length);
 
-        public abstract List<Integer> clearHashes(int length);
+        public abstract void clearHashes();
     }
 
     public static class InMemoryIndexRepository extends IndexRepository {
@@ -78,8 +78,9 @@ public class HashSearch {
         }
 
         @Override
-        public List<Integer> clearHashes(int length) {
-            return null;
+        public void clearHashes() {
+            hashes.clear();
+            lengths.clear();
         }
     }
 
